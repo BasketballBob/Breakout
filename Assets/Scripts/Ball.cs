@@ -6,9 +6,9 @@ public class Ball : PhysicsObject
 {
     //Ball Variables 
     float[] Trajectory = new float[2];
-    float BallSpeed = 1;
-    float SpeedMultiplier = 1;
-    float MultiplierRate;
+    float MultiplierRate = .05f;
+    float MultiplierCap = 3f;
+    public bool BrokenOut = false;
 
     public Ball(float x, float y, float Width, float Height, int ColType, Color color, float vSpeed, float hSpeed, bool Bouncy) : base(x, y, Width, Height, ColType, color, vSpeed, hSpeed, Bouncy)
     {
@@ -17,14 +17,25 @@ public class Ball : PhysicsObject
 
     public override void ProcessPhysics()
     {
-        //Set Ball Speed
-
         base.ProcessPhysics();
 
-        //Increment Speed Multiplier
-        if(BounceOccured)
+        //Increment Speed Multiplier (and Set Speed)
+        if(BlockCollision)
         {
-            SpeedMultiplier += MultiplierRate;
+            if (SpeedMultiplier + MultiplierRate < MultiplierCap)
+            {
+                SpeedMultiplier += MultiplierRate;
+            }
+            else SpeedMultiplier = MultiplierCap;                    
         }
+
+        //Breakout Zone Multiplier
+        if(!BrokenOut && y < GameManager.BreakOutZone)
+        {
+            SpeedMultiplier = MultiplierCap;
+
+            BrokenOut = true;
+        }
+
     }
 }

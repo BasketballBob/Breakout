@@ -15,9 +15,13 @@ public class Collider
     public int ColType;
     public Color color;
     public bool Destructable = false;
+    public int Score;
+    public bool Paddle = false;
 
     //Collision Types: 
     //0 - Wall / Paddle
+    //1 - Ball
+    //2 - Paddle
 
     public Collider(float x, float y, float Width, float Height, int ColType, Color color)
     {

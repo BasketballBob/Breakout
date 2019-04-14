@@ -11,8 +11,9 @@ public class PhysicsObject : Collider
     public const float MinMove = .001f;
     public float vSpeed;
     public float hSpeed;
+    public float SpeedMultiplier = 1f;
     bool Bouncy;
-    public bool BounceOccured;
+    public bool BlockCollision;
 
     public PhysicsObject(float x, float y, float Width, float Height, int ColType, Color color, float vSpeed, float hSpeed, bool Bouncy) : base(x, y, Width, Height, ColType, color)
     {
@@ -34,7 +35,11 @@ public class PhysicsObject : Collider
     public virtual void ProcessPhysics()
     {
         //Reset Bounce Tracker
-        BounceOccured = false;
+        BlockCollision = false;
+
+        //Manage Movement Speed Multiplier
+        vSpeed *= SpeedMultiplier;
+        hSpeed *= SpeedMultiplier;
 
         //Manage Vertical Collision
         if (vSpeed != 0)
@@ -54,18 +59,28 @@ public class PhysicsObject : Collider
 
             //React On Collision
             if(PlaceMeeting(x, y + MinMove * Sign(vSpeed), 0))
-            {               
+            {
+                //Collision Instance
+                Collider tvCollider = InstanceMeeting(x, y + MinMove * Sign(vSpeed), 0);
+
                 //Destroy Others
-                if(InstanceMeeting(x, y + MinMove * Sign(vSpeed), 0).Destructable)
+                if (tvCollider.Destructable)
                 {
+                    GameManager.Score += InstanceMeeting(x, y + MinMove * Sign(vSpeed), 0).Score;
                     ColliderList.Remove(InstanceMeeting(x, y + MinMove * Sign(vSpeed), 0));
+
+                    BlockCollision = true;
                 }
 
                 //Bounce
                 if (Bouncy) vSpeed *= -1;
                 else vSpeed = 0;
 
-                BounceOccured = true;
+                //Set Random Trajectory (On Collision With Paddle)
+                if (tvCollider.Paddle)
+                {
+                    SetTrajectory(Random.Range(30, 150));
+                }
             }
         }
 
@@ -89,20 +104,41 @@ public class PhysicsObject : Collider
         //React On Collision
         if (PlaceMeeting(x + MinMove * Sign(hSpeed), y, 0))
         {
-            //Destroy Others
-            if (InstanceMeeting(x + MinMove * Sign(hSpeed), y, 0).Destructable)
-            {
-                ColliderList.Remove(InstanceMeeting(x + MinMove * Sign(hSpeed), y, 0));
-            }
+            //Collision Instance
+            Collider tvCollider = InstanceMeeting(x + MinMove * Sign(hSpeed), y, 0);
 
+            //Destroy Others
+            if (tvCollider.Destructable)
+            {
+                GameManager.Score += InstanceMeeting(x + MinMove * Sign(hSpeed), y, 0).Score;
+                ColliderList.Remove(InstanceMeeting(x + MinMove * Sign(hSpeed), y, 0));
+
+                BlockCollision = true;
+            }
+        
             //Bounce
             if (Bouncy) hSpeed *= -1;
             else hSpeed = 0;
+          
+        }
 
-            BounceOccured = true;
-        }    
+        //Reset Multiplier
+        vSpeed = vSpeed / SpeedMultiplier;
+        hSpeed = hSpeed / SpeedMultiplier;
+
         
     }//PHYSICS PROCESSING
+
+    public void SetTrajectory(float Angle)
+    {
+        //Calculate New Trajectory
+        float Magnitude = Mathf.Sqrt(Mathf.Pow(hSpeed, 2) + Mathf.Pow(vSpeed, 2));
+        float xDist = Mathf.Cos((Angle / 180) * Mathf.PI);
+        float yDist = Mathf.Sin((Angle / 180) * Mathf.PI);
+        hSpeed = Magnitude * (xDist / (Mathf.Sqrt(Mathf.Pow(xDist, 2) + Mathf.Pow(yDist, 2))));
+        vSpeed = -Magnitude * (yDist / (Mathf.Sqrt(Mathf.Pow(xDist, 2) + Mathf.Pow(yDist, 2))));
+    }
+
 
     public float Sign(float Input)
     {
